@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Train, Bus, Car, ArrowRightLeft, Calendar, MapPin, Search, Loader2, X, Star } from "lucide-react";
+import { Train, Bus, Car, ArrowRightLeft, Calendar, MapPin, Search, Loader2, X, Star, Check } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { executeDbBooking } from "@/lib/db-server";
 
@@ -37,6 +37,7 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [bookingLoadingId, setBookingLoadingId] = useState<string | null>(null);
+  const [bookedTicket, setBookedTicket] = useState<any>(null);
 
   // Listen to autofill booking events from voice commands or quick links
   useEffect(() => {
@@ -228,6 +229,33 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
           transactions.unshift(newTx);
           localStorage.setItem("user_transactions", JSON.stringify(transactions));
           
+          if (mode === "trains" || mode === "buses") {
+            const ticketId = mode === "trains" 
+              ? `PNR-${Math.floor(1000000000 + Math.random() * 9000000000)}` 
+              : `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
+            const formattedDate = new Date(date || Date.now()).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric"
+            }).toUpperCase();
+            
+            const newTicket = {
+              mode,
+              service: item.name.toUpperCase(),
+              number: item.number || "EXPRESS",
+              date: formattedDate,
+              time: item.departure || "12:00 PM",
+              arrival: item.arrival || "08:00 AM",
+              seat: mode === "trains" ? `COACH A1 - SEAT ${Math.floor(1 + Math.random() * 64)}` : `SEAT ${Math.floor(1 + Math.random() * 36)}B`,
+              id: ticketId,
+              from: from.toUpperCase() || "SOURCE",
+              to: to.toUpperCase() || "DESTINATION",
+              operator: mode === "trains" ? "INDIAN RAILWAYS" : "GRAND BUS EXPRESS",
+              qrData: `https://shai.com/ticket/${ticketId}`
+            };
+            setBookedTicket(newTicket);
+          }
+
           toast.success("Booking Confirmed in Database!", {
             description: `Successfully booked ${item.name} (${item.number || "Express"}) from ${from} to ${to} on ${date} for ${count} traveler(s)!`,
             duration: 5000,
@@ -270,6 +298,33 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
       transactions.unshift(newTx);
       localStorage.setItem("user_transactions", JSON.stringify(transactions));
 
+      if (mode === "trains" || mode === "buses") {
+        const ticketId = mode === "trains" 
+          ? `PNR-${Math.floor(1000000000 + Math.random() * 9000000000)}` 
+          : `TKT-${Math.floor(100000 + Math.random() * 900000)}`;
+        const formattedDate = new Date(date || Date.now()).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric"
+        }).toUpperCase();
+        
+        const newTicket = {
+          mode,
+          service: item.name.toUpperCase(),
+          number: item.number || "EXPRESS",
+          date: formattedDate,
+          time: item.departure || "12:00 PM",
+          arrival: item.arrival || "08:00 AM",
+          seat: mode === "trains" ? `COACH A1 - SEAT ${Math.floor(1 + Math.random() * 64)}` : `SEAT ${Math.floor(1 + Math.random() * 36)}B`,
+          id: ticketId,
+          from: from.toUpperCase() || "SOURCE",
+          to: to.toUpperCase() || "DESTINATION",
+          operator: mode === "trains" ? "INDIAN RAILWAYS" : "GRAND BUS EXPRESS",
+          qrData: `https://shai.com/ticket/${ticketId}`
+        };
+        setBookedTicket(newTicket);
+      }
+
       setBookingLoadingId(null);
       setShowResults(false);
       
@@ -282,6 +337,21 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
         detail: { success: true, itemName: `${mode === "cabs" ? item.name : item.name + " (" + (item.number || "Express") + ")"} (for ${count} traveler(s))`, itemNumber: item.number || "Express", price: priceAmount }
       }));
     }, 800);
+  };
+
+  const handleDirectBook = () => {
+    if (!from.trim() || !to.trim()) {
+      toast.error(`Please enter both ${mode === "cabs" ? "pickup and drop" : "from and to"} locations.`);
+      return;
+    }
+
+    const results = getMockResults();
+    const firstOption = results[0];
+    if (firstOption) {
+      handleBook(firstOption);
+    } else {
+      toast.error("No booking options available.");
+    }
   };
 
   return (
@@ -412,19 +482,31 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
             </Field>
           )}
 
-          {/* Search button */}
-          <button
-            type="submit"
-            disabled={isSearching}
-            className="h-[62px] px-6 rounded-2xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition disabled:opacity-75 cursor-pointer"
-          >
-            {isSearching ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            {isSearching ? "Searching..." : "Search"}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-2 h-[62px]">
+            <button
+              type="submit"
+              disabled={isSearching}
+              className="px-4 rounded-2xl border border-border text-foreground hover:bg-muted font-semibold flex items-center justify-center gap-2 transition disabled:opacity-75 cursor-pointer"
+            >
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+              Search
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDirectBook}
+              disabled={isSearching || bookingLoadingId !== null}
+              className="px-5 rounded-2xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition disabled:opacity-75 cursor-pointer shadow-sm"
+            >
+              <Check className="w-4 h-4" />
+              Book Now
+            </button>
+          </div>
         </div>
 
         {/* Extras row */}
@@ -559,6 +641,86 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
                 className="px-4 py-2 border border-border rounded-xl hover:bg-muted text-sm font-semibold transition cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Premium Booked Ticket Confirmation Modal */}
+      {bookedTicket && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="flex flex-col items-center gap-6 max-w-sm w-full animate-in zoom-in-95 duration-300">
+            {/* The Ticket Container */}
+            <div className="premium-ticket select-none border border-white/10">
+              <div className="top">
+                <div className="premium-badge">
+                  {bookedTicket.mode === "trains" ? "TRAIN JOURNEY" : "BUS JOURNEY"}
+                </div>
+                
+                <div className="movie-name">
+                  {bookedTicket.service}
+                </div>
+
+                <div className="info-grid">
+                  <div className="info-box">
+                    <div className="label">FROM</div>
+                    <div className="value truncate">{bookedTicket.from}</div>
+                  </div>
+
+                  <div className="info-box">
+                    <div className="label">TO</div>
+                    <div className="value truncate">{bookedTicket.to}</div>
+                  </div>
+
+                  <div className="info-box">
+                    <div className="label">DATE</div>
+                    <div className="value">{bookedTicket.date}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="middle">
+                <div className="dashed"></div>
+              </div>
+
+              <div className="bottom">
+                <div className="qr">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(bookedTicket.qrData)}`}
+                    alt="QR Code"
+                  />
+                </div>
+
+                <div className="ticket-info">
+                  <div className="cinema">
+                    {bookedTicket.operator}
+                  </div>
+                  <div className="ticket-id font-mono text-sm">
+                    {bookedTicket.id}
+                  </div>
+                  <div className="note font-semibold text-white/90 text-[10px] mt-1">
+                    {bookedTicket.seat}<br />
+                    Departure: {bookedTicket.time}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 w-full justify-center">
+              <button
+                onClick={() => {
+                  toast.success("Ticket saved to local device!");
+                }}
+                className="flex-1 px-5 py-2.5 rounded-2xl bg-card border border-border text-foreground hover:bg-muted font-bold text-sm transition cursor-pointer shadow-sm"
+              >
+                Save Ticket
+              </button>
+              <button
+                onClick={() => setBookedTicket(null)}
+                className="flex-1 px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-sm transition cursor-pointer shadow-sm"
+              >
+                Done
               </button>
             </div>
           </div>

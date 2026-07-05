@@ -1,4 +1,3 @@
-import mysql from "mysql2/promise";
 
 const DB_CONFIGS = [
   { host: "127.0.0.1", port: 3306, user: "root", password: "", database: "shai" },
@@ -7,13 +6,35 @@ const DB_CONFIGS = [
   { host: "localhost", port: 3306, user: "root", password: "root", database: "shai" },
 ];
 
+import { createHash } from "crypto";
+
+function hashPassword(password: string): string {
+  return createHash("sha256").update(password).digest("hex");
+}
+
 export async function getDbConnection() {
+  if (typeof window !== "undefined") {
+    throw new Error("Database connections are server-only.");
+  }
+  const packageName = "mysql2/promise";
+  const { createConnection } = await import(packageName);
   let lastError = null;
   
   // Try common default database passwords and host bindings
   for (const config of DB_CONFIGS) {
     try {
-      const connection = await mysql.createConnection(config);
+      const connection = await createConnection(config);
+      
+      // Auto-initialize users table
+      await connection.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      
       return connection;
     } catch (err) {
       lastError = err;
@@ -115,12 +136,23 @@ export const MOCK_SERVICES = [
   }
 ];
 
-export async function fetchWalletFromDb() {
+export async function fetchWalletFromDb(email?: string) {
   try {
     const connection = await getDbConnection();
-    const [rows]: any = await connection.execute(
-      "SELECT user_id, full_name, email, phone, wallet_balance, transaction_limit, daily_limit FROM user_wallet WHERE user_id = 1"
-    );
+    let rows: any = [];
+    if (email) {
+      [rows] = await connection.execute(
+        "SELECT user_id, full_name, email, phone, wallet_balance, transaction_limit, daily_limit FROM user_wallet WHERE email = ?",
+        [email]
+      );
+    }
+    
+    if (!rows || rows.length === 0) {
+      [rows] = await connection.execute(
+        "SELECT user_id, full_name, email, phone, wallet_balance, transaction_limit, daily_limit FROM user_wallet WHERE user_id = 1"
+      );
+    }
+    
     await connection.end();
     
     if (rows && rows.length > 0) {
@@ -161,14 +193,24 @@ export async function fetchServicesFromDb() {
   }
 }
 
-export async function executeBookingInDb(serviceId: number, amount: number) {
+export async function executeBookingInDb(serviceId: number, amount: number, email?: string) {
   try {
     const connection = await getDbConnection();
     
     // Check wallet balance and limits
-    const [walletRows]: any = await connection.execute(
-      "SELECT wallet_balance, transaction_limit, daily_limit FROM user_wallet WHERE user_id = 1"
-    );
+    let walletRows: any = [];
+    if (email) {
+      [walletRows] = await connection.execute(
+        "SELECT user_id, wallet_balance, transaction_limit, daily_limit FROM user_wallet WHERE email = ?",
+        [email]
+      );
+    }
+    
+    if (!walletRows || walletRows.length === 0) {
+      [walletRows] = await connection.execute(
+        "SELECT user_id, wallet_balance, transaction_limit, daily_limit FROM user_wallet WHERE user_id = 1"
+      );
+    }
     
     if (!walletRows || walletRows.length === 0) {
       await connection.end();
@@ -176,6 +218,7 @@ export async function executeBookingInDb(serviceId: number, amount: number) {
     }
     
     const wallet = walletRows[0];
+    const userId = wallet.user_id;
     const balance = parseFloat(wallet.wallet_balance);
     const txnLimit = parseFloat(wallet.transaction_limit);
     
@@ -195,8 +238,8 @@ export async function executeBookingInDb(serviceId: number, amount: number) {
     try {
       // 1. Deduct wallet balance
       await connection.execute(
-        "UPDATE user_wallet SET wallet_balance = wallet_balance - ? WHERE user_id = 1",
-        [amount]
+        "UPDATE user_wallet SET wallet_balance = wallet_balance - ? WHERE user_id = ?",
+        [amount, userId]
       );
       
       // 2. Decrement service available quantity
@@ -210,19 +253,20 @@ export async function executeBookingInDb(serviceId: number, amount: number) {
         Math.floor(Math.random() * 16).toString(16)
       ).join("");
       
-      // 4. Insert dynamic transaction record matching enum values and columns
+      // 4. Insert dynamic transaction record matching the new schemas
       await connection.execute(
         `INSERT INTO transactions (
           user_id, 
           service_id, 
-          agent_type, 
-          status, 
           payment_amount, 
           wallet_before, 
           wallet_after, 
+          risk_score,
+          booking_status,
           transaction_hash
-        ) VALUES (1, ?, 'booking_agent', 'Approved', ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, 'LOW', 'SUCCESS', ?)`,
         [
+          userId,
           serviceId,
           amount,
           balance,
@@ -341,6 +385,113 @@ export async function resetDbState() {
     }
   } catch (err: any) {
     console.error("Failed to reset database state:", err);
+    throw err;
+  }
+}
+
+export async function updateWalletBalanceInDb(newBalance: number, email?: string) {
+  try {
+    const connection = await getDbConnection();
+    if (email) {
+      await connection.execute(
+        "UPDATE user_wallet SET wallet_balance = ? WHERE email = ?",
+        [newBalance, email]
+      );
+    } else {
+      await connection.execute(
+        "UPDATE user_wallet SET wallet_balance = ? WHERE user_id = 1",
+        [newBalance]
+      );
+    }
+    await connection.end();
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to update wallet balance in DB:", err);
+    throw err;
+  }
+}
+
+export async function registerUser(email: string, password: string) {
+  try {
+    const connection = await getDbConnection();
+    const hashedPassword = hashPassword(password);
+
+    // 1. Insert into users table
+    await connection.execute(
+      "INSERT INTO users (email, password) VALUES (?, ?)",
+      [email, hashedPassword]
+    );
+
+    // 2. Get the new user's ID
+    const [rows]: any = await connection.execute(
+      "SELECT id FROM users WHERE email = ?",
+      [email]
+    );
+    const userId = rows[0]?.id;
+
+    if (userId) {
+      // 3. Create user_wallet entry with starting balance 5000.00
+      const cleanName = email.split("@")[0].split(".")
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(" ");
+
+      // Describe user_wallet table to adapt to dynamic schema constraints
+      const [walletCols]: any = await connection.execute("DESCRIBE user_wallet");
+      const walletColumnNames = walletCols.map((col: any) => col.Field);
+
+      const columnsToInsert = ["user_id", "full_name", "email", "phone", "wallet_balance", "transaction_limit", "daily_limit"];
+      const valuesToInsert: any[] = [userId, cleanName, email, '9999999999', 5000.00, 2000.00, 3000.00];
+
+      if (walletColumnNames.includes("password_hash")) {
+        columnsToInsert.push("password_hash");
+        valuesToInsert.push(hashedPassword);
+      }
+
+      if (walletColumnNames.includes("transaction_pin_hash")) {
+        columnsToInsert.push("transaction_pin_hash");
+        // default PIN "1234" SHA-256 hash
+        valuesToInsert.push("03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4");
+      }
+
+      const colString = columnsToInsert.join(", ");
+      const valPlaceholderString = columnsToInsert.map(() => "?").join(", ");
+
+      await connection.execute(
+        `INSERT INTO user_wallet (${colString}) VALUES (${valPlaceholderString})
+        ON DUPLICATE KEY UPDATE email = VALUES(email)`,
+        valuesToInsert
+      );
+    }
+
+    await connection.end();
+    return { success: true };
+  } catch (err: any) {
+    console.error("Failed to register user in DB:", err);
+    if (err.code === "ER_DUP_ENTRY") {
+      throw new Error("An account with this email already exists.");
+    }
+    throw err;
+  }
+}
+
+export async function loginUser(email: string, password: string) {
+  try {
+    const connection = await getDbConnection();
+    const hashedPassword = hashPassword(password);
+
+    const [rows]: any = await connection.execute(
+      "SELECT id, email FROM users WHERE email = ? AND password = ?",
+      [email, hashedPassword]
+    );
+
+    await connection.end();
+
+    if (rows && rows.length > 0) {
+      return { success: true, user: rows[0] };
+    }
+    throw new Error("Invalid email or password.");
+  } catch (err: any) {
+    console.error("Failed to login user in DB:", err);
     throw err;
   }
 }

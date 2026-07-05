@@ -64,7 +64,7 @@ export function contentForCity(city: City) {
     {
       title: "Homecoming",
       tag: "UA16+ | Hindi",
-      image: "/posters/skyline.png",
+      image: "/posters/homecoming.png",
       rating: "4.7",
       votes: "9.8K",
       genre: "Drama / Family",
@@ -80,7 +80,7 @@ export function contentForCity(city: City) {
     {
       title: "Midnight Mix",
       tag: "A | Hindi",
-      image: "/posters/neon_alpha.png",
+      image: "/posters/midnight_mix.png",
       rating: "4.3",
       votes: "6.5K",
       genre: "Music / Romance / Drama",
@@ -112,7 +112,7 @@ export function contentForCity(city: City) {
     {
       title: "Paper Kites",
       tag: "U | Hindi",
-      image: "/posters/into_the_jungle.png",
+      image: "/posters/paper_kites.png",
       rating: "4.9",
       votes: "15.7K",
       genre: "Animation / Kids / Family",

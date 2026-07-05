@@ -92,3 +92,163 @@
   padding-bottom: 0.5rem;
 }
 .scroll-row::-webkit-scrollbar { display: none; }
+
+/* Auth Sign In Modal styling matching SHAI premium theme */
+.auth-container {
+  width: 100%;
+  max-width: 360px;
+  background: var(--card);
+  border-radius: 24px;
+  padding: 30px 35px;
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 50px -12px rgba(168, 85, 247, 0.08), 0 0 1px 1px rgba(168, 85, 247, 0.05);
+}
+
+.auth-heading {
+  text-align: center;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.auth-form {
+  margin-top: 20px;
+}
+
+.auth-form .auth-input {
+  width: 100%;
+  background: var(--background);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-top: 14px;
+  box-shadow: none;
+  color: var(--foreground);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.auth-form .auth-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.8;
+}
+
+.auth-form .auth-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card);
+  box-shadow: 0 0 0 3px oklch(0.58 0.22 285 / 15%);
+}
+
+.auth-form .auth-forgot-password {
+  display: block;
+  margin-top: 10px;
+  margin-left: 4px;
+}
+
+.auth-form .auth-forgot-password a {
+  font-size: 11px;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-form .auth-forgot-password a:hover {
+  text-decoration: underline;
+}
+
+.auth-form .auth-login-button {
+  display: block;
+  width: 100%;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.5 0.2 320) 100%);
+  color: var(--primary-foreground);
+  padding-block: 14px;
+  margin: 20px auto;
+  border-radius: 14px;
+  box-shadow: 0 10px 20px -10px oklch(0.58 0.22 285 / 40%);
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-form .auth-login-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px -8px oklch(0.58 0.22 285 / 50%);
+  opacity: 0.95;
+}
+
+.auth-form .auth-login-button:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 16px -8px oklch(0.58 0.22 285 / 40%);
+}
+
+.auth-social-container {
+  margin-top: 25px;
+}
+
+.auth-social-container .auth-title {
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.auth-social-container .auth-social-accounts {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.auth-social-container .auth-social-accounts .auth-social-button {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 12px;
+  width: 44px;
+  aspect-ratio: 1;
+  display: grid;
+  place-content: center;
+  box-shadow: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-social-container .auth-social-accounts .auth-social-button .svg {
+  fill: var(--foreground);
+  margin: auto;
+  width: 18px;
+  height: 18px;
+}
+
+.auth-social-container .auth-social-accounts .auth-social-button:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.auth-social-container .auth-social-accounts .auth-social-button:active {
+  transform: translateY(0);
+}
+
+.auth-agreement {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.auth-agreement a {
+  text-decoration: none;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+
+.auth-agreement a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}

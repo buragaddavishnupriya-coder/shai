@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Train, Bus, Car, ArrowRightLeft, Calendar, MapPin, Search, Loader2, X, Star } from "lucide-react";
 import { Toaster, toast } from "sonner";
+import { executeDbBooking } from "@/lib/db-server";
 
 type Mode = "trains" | "buses" | "cabs";
 
@@ -19,9 +20,10 @@ interface TravelBookingProps {
   defaultMode?: Mode;
   wallet?: any;
   setWallet?: (w: any) => void;
+  dbServices?: any[];
 }
 
-export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWallet }: TravelBookingProps) {
+export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWallet, dbServices }: TravelBookingProps) {
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -30,6 +32,7 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
   const [travelClass, setTravelClass] = useState(classes[0]);
   const [cabType, setCabType] = useState(cabTypes[1]);
   const [pickupTime, setPickupTime] = useState("10:00");
+  const [passengers, setPassengers] = useState(1);
   
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -37,15 +40,77 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
 
   // Listen to autofill booking events from voice commands or quick links
   useEffect(() => {
-    const handleAutofill = (e: Event) => {
+    const handleAutofill = async (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail.mode) setMode(detail.mode);
       if (detail.from !== undefined) setFrom(detail.from);
       if (detail.to !== undefined) setTo(detail.to);
+      if (detail.date !== undefined) setDate(detail.date);
+      if (detail.travelClass !== undefined) setTravelClass(detail.travelClass);
+      if (detail.cabType !== undefined) setCabType(detail.cabType);
+      if (detail.members !== undefined) setPassengers(detail.members);
+      
+      if (detail.autoSubmit) {
+        setIsSearching(true);
+        setTimeout(() => {
+          setIsSearching(false);
+          setShowResults(true);
+          
+          if (detail.autoBook) {
+            setTimeout(() => {
+              const categoryLabel = detail.mode === "trains" ? "Train" : detail.mode === "buses" ? "Bus" : "Cab";
+              let results: any[] = [];
+              if (dbServices && dbServices.length > 0) {
+                const filtered = dbServices.filter(s => 
+                  s.category.toLowerCase() === categoryLabel.toLowerCase() &&
+                  s.source_location?.toLowerCase() === detail.from?.toLowerCase() &&
+                  s.destination_location?.toLowerCase() === detail.to?.toLowerCase()
+                );
+                if (filtered.length > 0) {
+                  results = filtered.map(s => ({
+                    id: String(s.service_id),
+                    isDbService: true,
+                    name: s.provider_name,
+                    number: s.item_name,
+                    departure: s.show_time || "10:00",
+                    arrival: "18:00",
+                    duration: "8h 00m",
+                    price: `₹${s.price}`,
+                    type: s.travel_class || "Standard",
+                    status: s.status === "Available" ? `AVAILABLE - 00${s.available_quantity}` : "UNAVAILABLE"
+                  }));
+                }
+              }
+              
+              if (results.length === 0) {
+                if (detail.mode === "trains") {
+                  results = [
+                    { id: "t1", name: "Rajdhani Express", number: "12951", departure: "16:30", arrival: "08:30", duration: "16h 00m", price: "₹650", type: detail.travelClass || "AC 3-Tier", status: "AVAILABLE - 0048" }
+                  ];
+                } else if (detail.mode === "buses") {
+                  results = [
+                    { id: "b1", name: "RedBus A/C Sleeper", departure: "20:00", arrival: "06:30", duration: "10h 30m", price: "₹900", rating: "4.7", type: "AC Sleeper (2+1)" }
+                  ];
+                } else {
+                  results = [
+                    { id: "c1", name: `Uber ${detail.cabType || "Sedan"}`, price: "₹450", details: "Best for 2-3 passengers", duration: "approx. 4h 30m" }
+                  ];
+                }
+              }
+              
+              const firstItem = results[0];
+              if (firstItem) {
+                handleBook(firstItem, detail.members);
+              }
+            }, 1000);
+          }
+        }, 1200);
+      }
     };
+    
     window.addEventListener("autofill-booking", handleAutofill);
     return () => window.removeEventListener("autofill-booking", handleAutofill);
-  }, []);
+  }, [from, to, mode, dbServices, wallet, passengers]);
 
   function swap() {
     setFrom(to);
@@ -66,6 +131,31 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
   }
 
   const getMockResults = () => {
+    const categoryLabel = mode === "trains" ? "Train" : mode === "buses" ? "Bus" : "Cab";
+    
+    if (dbServices && dbServices.length > 0) {
+      const filtered = dbServices.filter(s => 
+        s.category.toLowerCase() === categoryLabel.toLowerCase() &&
+        s.source_location?.toLowerCase() === from?.toLowerCase() &&
+        s.destination_location?.toLowerCase() === to?.toLowerCase()
+      );
+      
+      if (filtered.length > 0) {
+        return filtered.map(s => ({
+          id: String(s.service_id),
+          isDbService: true,
+          name: s.provider_name,
+          number: s.item_name,
+          departure: s.show_time || "10:00",
+          arrival: "18:00",
+          duration: "8h 00m",
+          price: `₹${s.price}`,
+          type: s.travel_class || "Standard",
+          status: s.status === "Available" ? `AVAILABLE - 00${s.available_quantity}` : "UNAVAILABLE"
+        }));
+      }
+    }
+
     if (mode === "trains") {
       return [
         { id: "t1", name: "Rajdhani Express", number: "12951", departure: "16:30", arrival: "08:30", duration: "16h 00m", price: "₹650", type: travelClass || "AC 3-Tier", status: "AVAILABLE - 0048" },
@@ -87,8 +177,10 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
     }
   };
 
-  const handleBook = async (item: any) => {
-    const priceAmount = parseFloat(item.price.replace("₹", "").replace(",", ""));
+  const handleBook = async (item: any, membersOverride?: number) => {
+    const count = mode === "cabs" ? 1 : (membersOverride !== undefined ? membersOverride : passengers);
+    const basePrice = parseFloat(item.price.replace("₹", "").replace(",", ""));
+    const priceAmount = basePrice * count;
     
     if (wallet) {
       if (priceAmount > wallet.wallet_balance) {
@@ -103,6 +195,60 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
 
     setBookingLoadingId(item.id);
     
+    if (item.isDbService) {
+      try {
+        const session = localStorage.getItem("user_session");
+        let email: string | undefined = undefined;
+        if (session && session !== "undefined") {
+          try {
+            email = JSON.parse(session)?.email;
+          } catch (e) {
+            console.error("Failed to parse session", e);
+          }
+        }
+        const res = await executeDbBooking({ data: { serviceId: parseInt(item.id), amount: priceAmount, email } });
+        if (res && res.success) {
+          if (setWallet && wallet) {
+            const nextBalance = res.balance;
+            const nextWallet = { ...wallet, wallet_balance: nextBalance };
+            setWallet(nextWallet);
+            localStorage.setItem("wallet_profile", JSON.stringify(nextWallet));
+          }
+          
+          const transactionsLocal = localStorage.getItem("user_transactions");
+          const transactions = transactionsLocal ? JSON.parse(transactionsLocal) : [];
+          const newTx = {
+            id: `TX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+            service: mode === "trains" ? "Train Ticket" : mode === "buses" ? "Bus Ticket" : "Cab Ride",
+            details: `${item.name} (${item.number || "Express"}) from ${from} to ${to} (${count} traveler(s))`,
+            amount: priceAmount,
+            timestamp: new Date().toLocaleString(),
+            status: "Approved"
+          };
+          transactions.unshift(newTx);
+          localStorage.setItem("user_transactions", JSON.stringify(transactions));
+          
+          toast.success("Booking Confirmed in Database!", {
+            description: `Successfully booked ${item.name} (${item.number || "Express"}) from ${from} to ${to} on ${date} for ${count} traveler(s)!`,
+            duration: 5000,
+          });
+          window.dispatchEvent(new CustomEvent("wallet-updated"));
+          window.dispatchEvent(new CustomEvent("booking-completed-voice", { 
+            detail: { success: true, itemName: `${item.name} (for ${count} traveler(s))`, itemNumber: item.number, price: priceAmount }
+          }));
+        } else {
+          toast.error("Database transaction failed.");
+        }
+      } catch (err: any) {
+        toast.error(`Database booking failed: ${err.message || err}`);
+      } finally {
+        setBookingLoadingId(null);
+        setShowResults(false);
+      }
+      return;
+    }
+
+    // Local Storage Mock fallback
     setTimeout(() => {
       if (setWallet && wallet) {
         const nextBalance = wallet.wallet_balance - priceAmount;
@@ -110,20 +256,36 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
         setWallet(nextWallet);
         localStorage.setItem("wallet_profile", JSON.stringify(nextWallet));
       }
+      
+      const transactionsLocal = localStorage.getItem("user_transactions");
+      const transactions = transactionsLocal ? JSON.parse(transactionsLocal) : [];
+      const newTx = {
+        id: `TX-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        service: mode === "trains" ? "Train Ticket" : mode === "buses" ? "Bus Ticket" : "Cab Ride",
+        details: `${mode === "cabs" ? item.name : item.name + " (" + (item.number || "Express") + ")"} from ${from} to ${to} (${count} traveler(s))`,
+        amount: priceAmount,
+        timestamp: new Date().toLocaleString(),
+        status: "Approved"
+      };
+      transactions.unshift(newTx);
+      localStorage.setItem("user_transactions", JSON.stringify(transactions));
+
       setBookingLoadingId(null);
       setShowResults(false);
       
       toast.success("Booking Confirmed!", {
-        description: `Successfully booked ${mode === "cabs" ? item.name : item.name + " (" + (item.number || "Express") + ")"} from ${from} to ${to} on ${date}!`,
+        description: `Successfully booked ${mode === "cabs" ? item.name : item.name + " (" + (item.number || "Express") + ")"} from ${from} to ${to} on ${date} for ${count} traveler(s)!`,
         duration: 5000,
       });
       window.dispatchEvent(new CustomEvent("wallet-updated"));
+      window.dispatchEvent(new CustomEvent("booking-completed-voice", { 
+        detail: { success: true, itemName: `${mode === "cabs" ? item.name : item.name + " (" + (item.number || "Express") + ")"} (for ${count} traveler(s))`, itemNumber: item.number || "Express", price: priceAmount }
+      }));
     }, 800);
   };
 
   return (
     <div className="bg-card border border-border rounded-3xl shadow-sm overflow-hidden relative">
-      <Toaster position="top-center" richColors />
       
       {/* Tab bar */}
       <div className="flex border-b border-border bg-muted/40">
@@ -148,7 +310,7 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
       </div>
 
       <form onSubmit={onSubmit} className="p-6">
-        <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] md:items-end">
+        <div className="grid gap-4 md:grid-cols-[1.2fr_auto_1.2fr_1fr_1.5fr_0.8fr_auto] md:items-end">
           {/* From */}
           <Field label={mode === "cabs" ? "Pickup" : "From"} icon={<MapPin className="w-4 h-4 text-primary" />}>
             <input
@@ -223,6 +385,33 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
             </Field>
           )}
 
+          {/* 5th field varies: Travelers (trains/buses) or Pickup Time (cabs) */}
+          {(mode === "trains" || mode === "buses") && (
+            <Field label="Travelers">
+              <select
+                value={passengers}
+                onChange={(e) => setPassengers(parseInt(e.target.value))}
+                className="bg-transparent outline-none text-base font-semibold w-full"
+              >
+                {[1, 2, 3, 4, 5, 6].map((num) => (
+                  <option key={num} value={num}>
+                    {num} {num === 1 ? "Traveler" : "Travelers"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+          {mode === "cabs" && (
+            <Field label="Pickup Time">
+              <input
+                type="time"
+                value={pickupTime}
+                onChange={(e) => setPickupTime(e.target.value)}
+                className="bg-transparent outline-none text-base font-semibold w-full"
+              />
+            </Field>
+          )}
+
           {/* Search button */}
           <button
             type="submit"
@@ -258,15 +447,6 @@ export function TravelBooking({ defaultMode = "trains" as Mode, wallet, setWalle
           )}
           {mode === "cabs" && (
             <>
-              <label className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-muted-foreground">
-                Pickup time
-                <input
-                  type="time"
-                  value={pickupTime}
-                  onChange={(e) => setPickupTime(e.target.value)}
-                  className="bg-transparent outline-none text-xs font-semibold"
-                />
-              </label>
               <Chip>One-way</Chip>
               <Chip>Round trip</Chip>
               <Chip>Airport transfer</Chip>

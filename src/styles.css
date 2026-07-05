@@ -252,3 +252,187 @@
   color: var(--primary);
   text-decoration: underline;
 }
+
+/* Premium Movie Ticket styling matching user's template */
+.premium-ticket {
+  width: 100%;
+  max-width: 380px;
+  background: linear-gradient(135deg, #7c3aed, #4c1d95);
+  border-radius: 28px;
+  overflow: hidden;
+  color: white;
+  position: relative;
+  box-shadow: 
+    0 20px 50px rgba(76, 29, 149, 0.25),
+    0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.premium-ticket::before {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  top: -70px;
+  right: -70px;
+  pointer-events: none;
+}
+
+.premium-ticket::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  bottom: -120px;
+  left: -80px;
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.premium-ticket .top {
+  padding: 32px 30px 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.premium-ticket .premium-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  margin-bottom: 18px;
+  backdrop-filter: blur(10px);
+}
+
+.premium-ticket .movie-name {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 22px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.premium-ticket .info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.premium-ticket .info-box {
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px 8px;
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.premium-ticket .label {
+  font-size: 10px;
+  opacity: 0.7;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.premium-ticket .value {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.premium-ticket .middle {
+  position: relative;
+  margin: 10px 0;
+  height: 30px;
+}
+
+.premium-ticket .middle::before,
+.premium-ticket .middle::after {
+  content: "";
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background: #09090b; /* Matches dark overlay backdrop precisely */
+  border-radius: 50%;
+  top: -1px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.premium-ticket .middle::before {
+  left: -16px;
+}
+
+.premium-ticket .middle::after {
+  right: -16px;
+}
+
+.premium-ticket .dashed {
+  position: absolute;
+  top: 14px;
+  left: 25px;
+  right: 25px;
+  border-top: 2px dashed rgba(255, 255, 255, 0.25);
+}
+
+.premium-ticket .bottom {
+  padding: 10px 30px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.premium-ticket .qr img {
+  width: 100px;
+  height: 100px;
+  border-radius: 14px;
+  background: white;
+  padding: 8px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.premium-ticket .ticket-info {
+  flex: 1;
+  text-align: left;
+}
+
+.premium-ticket .cinema {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.premium-ticket .ticket-id {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.premium-ticket .note {
+  font-size: 10px;
+  line-height: 1.4;
+  opacity: 0.6;
+}
+
+@media(max-width: 420px) {
+  .premium-ticket .movie-name {
+    font-size: 24px;
+  }
+  .premium-ticket .ticket-id {
+    font-size: 18px;
+  }
+}
+

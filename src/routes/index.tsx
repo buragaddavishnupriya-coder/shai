@@ -140,6 +140,7 @@ function Home() {
   const [selectedPriceClass, setSelectedPriceClass] = useState<any>(null);
   const [isBookingMovie, setIsBookingMovie] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [bookedTicket, setBookedTicket] = useState<any>(null);
   const [wallet, setWallet] = useState<any>({
     full_name: "Test User",
     email: "test@shai.com",
@@ -462,7 +463,29 @@ function Home() {
       };
       transactions.unshift(newTx);
       localStorage.setItem("user_transactions", JSON.stringify(transactions));
+
+      // Generate dynamic personalized ticket from user's premium HTML template
+      const ticketId = `MOV-${Math.floor(100000 + Math.random() * 900000)}`;
+      const seats = ["A12", "B18", "C04", "D15", "E09", "F22", "G11"];
+      const randomSeat = seats[Math.floor(Math.random() * seats.length)];
       
+      const formattedDate = new Date().toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }).toUpperCase();
+
+      const newTicket = {
+        movie: selectedMovie.title.toUpperCase(),
+        date: formattedDate,
+        time: selectedShowtime || "7:30 PM",
+        seat: randomSeat,
+        id: ticketId,
+        cinema: `CINEPOLIS, ${city.name.toUpperCase()}`,
+        qrData: `https://shai.com/ticket/${ticketId}`
+      };
+      
+      setBookedTicket(newTicket);
       setIsBookingMovie(false);
       setSelectedMovie(null);
       
@@ -1360,6 +1383,87 @@ function Home() {
             <span className="auth-agreement">
               <a href="#" onClick={(e) => { e.preventDefault(); toast.info("User license agreement shown in full system terms."); }}>Learn user licence agreement</a>
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Booked Ticket Confirmation Modal */}
+      {bookedTicket && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="flex flex-col items-center gap-6 max-w-sm w-full animate-in zoom-in-95 duration-300">
+            {/* The Ticket Container matching user template schema */}
+            <div className="premium-ticket select-none border border-white/10">
+              <div className="top">
+                <div className="premium-badge">
+                  PREMIUM ACCESS
+                </div>
+                
+                <div className="movie-name">
+                  {bookedTicket.movie}
+                </div>
+
+                <div className="info-grid">
+                  <div className="info-box">
+                    <div className="label">DATE</div>
+                    <div className="value">{bookedTicket.date}</div>
+                  </div>
+
+                  <div className="info-box">
+                    <div className="label">TIME</div>
+                    <div className="value">{bookedTicket.time}</div>
+                  </div>
+
+                  <div className="info-box">
+                    <div className="label">SEAT</div>
+                    <div className="value">{bookedTicket.seat}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="middle">
+                <div className="dashed"></div>
+              </div>
+
+              <div className="bottom">
+                <div className="qr">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(bookedTicket.qrData)}`}
+                    alt="QR Code"
+                  />
+                </div>
+
+                <div className="ticket-info">
+                  <div className="cinema">
+                    {bookedTicket.cinema}
+                  </div>
+                  <div className="ticket-id">
+                    {bookedTicket.id}
+                  </div>
+                  <div className="note">
+                    Present QR code at entrance.<br />
+                    Enjoy the show!
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 w-full justify-center">
+              <button
+                onClick={() => {
+                  toast.success("Ticket saved to local device!");
+                }}
+                className="flex-1 px-5 py-2.5 rounded-2xl bg-card border border-border text-foreground hover:bg-muted font-bold text-sm transition cursor-pointer shadow-sm"
+              >
+                Save Ticket
+              </button>
+              <button
+                onClick={() => setBookedTicket(null)}
+                className="flex-1 px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground hover:opacity-90 font-bold text-sm transition cursor-pointer shadow-sm"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

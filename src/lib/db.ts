@@ -1,10 +1,22 @@
 
-const DB_CONFIGS = [
+const DB_CONFIGS = [];
+
+if (process.env.DB_HOST) {
+  DB_CONFIGS.push({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || "3306"),
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "shai",
+  });
+}
+
+DB_CONFIGS.push(
   { host: "127.0.0.1", port: 3306, user: "root", password: "", database: "shai" },
   { host: "127.0.0.1", port: 3306, user: "root", password: "root", database: "shai" },
   { host: "localhost", port: 3306, user: "root", password: "", database: "shai" },
-  { host: "localhost", port: 3306, user: "root", password: "root", database: "shai" },
-];
+  { host: "localhost", port: 3306, user: "root", password: "root", database: "shai" }
+);
 
 import { createHash } from "crypto";
 

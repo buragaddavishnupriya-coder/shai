@@ -1,0 +1,354 @@
+/* ============================================================
+   SHAI Agent AI — Voice Assistant Styles
+   Extracted from: static/css/style.css
+
+   Includes every CSS rule that governs mic button,
+   chat bubble, option cards, agent status dots, and
+   toast notifications used by the voice assistant flow.
+   ============================================================ */
+
+/* ─── Mic Button (booking.html inline + JS dynamic styles) ─────────────────
+   The mic button is a .btn.btn-secondary.btn-icon element.
+   When listening, these inline styles are applied via JS (booking.js 312–314):
+     background: rgba(239,68,68,0.2)
+     border: 1px solid var(--accent-danger)
+   The icon swaps from fa-microphone to fa-stop.
+   ────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Primary colour — matches style.css var(--primary) */
+  --va-primary:        oklch(0.58 0.22 285);
+  --va-primary-light:  oklch(0.7  0.18 285);
+  --va-primary-faint:  oklch(0.95 0.06 285);
+
+  /* Semantic colours */
+  --va-success:  oklch(0.55 0.18 155);
+  --va-warning:  oklch(0.7  0.18  75);
+  --va-danger:   oklch(0.6  0.24  27);
+  --va-info:     oklch(0.6  0.18 220);
+
+  /* Surfaces */
+  --va-bg:       oklch(0.98 0.015 295);
+  --va-card:     oklch(1    0     0  );
+  --va-muted:    oklch(0.95 0.02 290);
+  --va-border:   oklch(0.9  0.02 290);
+
+  /* Text */
+  --va-text:      oklch(0.18 0.03 275);
+  --va-text-muted:oklch(0.65 0.03 275);
+
+  /* Shadows */
+  --va-shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06);
+  --va-shadow-glow: 0 4px 20px oklch(0.58 0.22 285 / 0.15);
+
+  /* Transitions */
+  --va-trans: 0.15s ease;
+}
+
+/* ─── Mic Button ─────────────────────────────────────────────────────────── */
+.va-mic-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid var(--va-border);
+  background: var(--va-muted);
+  color: var(--va-text);
+  transition: all var(--va-trans);
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.va-mic-btn:hover {
+  background: var(--va-primary-faint);
+  border-color: var(--va-primary);
+  color: var(--va-primary);
+}
+
+/* Listening state — applied via JS (booking.js lines 312–314) */
+.va-mic-btn.listening {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--va-danger);
+  color: var(--va-danger);
+  animation: va-pulse-mic 1s ease-in-out infinite;
+}
+
+@keyframes va-pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0   oklch(0.6 0.24 27 / 0.4); }
+  50%       { box-shadow: 0 0 0 8px oklch(0.6 0.24 27 / 0);   }
+}
+
+/* ─── Send Button ────────────────────────────────────────────────────────── */
+.va-send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--va-primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all var(--va-trans);
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.va-send-btn:hover {
+  background: var(--va-primary-light);
+  box-shadow: var(--va-shadow-glow);
+  transform: scale(1.05);
+}
+
+/* ─── Chat Input ─────────────────────────────────────────────────────────── */
+.va-chat-input {
+  flex: 1;
+  background: var(--va-muted);
+  border: 1px solid var(--va-border);
+  border-radius: 24px;
+  color: var(--va-text);
+  font-size: 0.9rem;
+  padding: 12px 18px;
+  font-family: inherit;
+  resize: none;
+  transition: all var(--va-trans);
+  max-height: 120px;
+}
+
+.va-chat-input:focus {
+  outline: none;
+  border-color: var(--va-primary);
+  box-shadow: 0 0 0 3px oklch(0.58 0.22 285 / 0.12);
+  background: var(--va-card);
+}
+
+.va-chat-input::placeholder {
+  color: var(--va-text-muted);
+}
+
+/* ─── Chat Input Area Row ────────────────────────────────────────────────── */
+.va-chat-input-area {
+  padding: 16px 20px;
+  border-top: 1px solid var(--va-border);
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  background: var(--va-card);
+}
+
+/* ─── Chat Messages ──────────────────────────────────────────────────────── */
+.va-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.va-chat-msg {
+  max-width: 80%;
+  animation: va-slide-up 0.3s ease;
+}
+
+.va-chat-msg.user  { align-self: flex-end; }
+.va-chat-msg.agent { align-self: flex-start; }
+
+.va-chat-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.va-chat-msg.user  .va-chat-bubble {
+  background: var(--va-primary);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.va-chat-msg.agent .va-chat-bubble {
+  background: var(--va-card);
+  border: 1px solid var(--va-border);
+  color: var(--va-text);
+  border-bottom-left-radius: 4px;
+  box-shadow: var(--va-shadow-sm);
+}
+
+.va-chat-meta {
+  font-size: 0.7rem;
+  color: var(--va-text-muted);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.va-chat-msg.agent .va-chat-meta { text-align: left; }
+
+/* ─── Agent Status Dot ───────────────────────────────────────────────────── */
+.va-agent-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--va-text-muted);
+  display: inline-block;
+}
+
+.va-agent-dot.active {
+  background: var(--va-success);
+  box-shadow: 0 0 6px oklch(0.55 0.18 155 / 0.6);
+  animation: va-pulse-dot 2s infinite;
+}
+
+.va-agent-dot.busy {
+  background: var(--va-warning);
+  box-shadow: 0 0 6px oklch(0.7 0.18 75 / 0.6);
+}
+
+.va-agent-dot.error { background: var(--va-danger); }
+
+.va-agent-dot.processing {
+  background: var(--va-warning);
+  animation: va-pulse-dot 0.6s infinite;
+}
+
+/* ─── Toast Notifications ────────────────────────────────────────────────── */
+.va-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.va-toast {
+  background: var(--va-card);
+  border: 1px solid var(--va-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 280px;
+  max-width: 380px;
+  box-shadow: 0 10px 30px oklch(0 0 0 / 0.1);
+  animation: va-slide-in-right 0.3s ease;
+  font-size: 0.875rem;
+  pointer-events: all;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+.va-toast.success { border-color: oklch(0.8 0.1 155); }
+.va-toast.error   { border-color: oklch(0.82 0.1 27); }
+.va-toast.warning { border-color: oklch(0.85 0.1 75); }
+.va-toast.info    { border-color: oklch(0.8 0.1 220); }
+
+.va-toast-icon { font-size: 1.2rem; flex-shrink: 0; }
+.va-toast-msg  { flex: 1; }
+
+/* ─── Option Cards ───────────────────────────────────────────────────────── */
+.va-option-card {
+  background: var(--va-card);
+  border: 1px solid var(--va-border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--va-trans);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--va-shadow-sm);
+}
+
+.va-option-card:hover {
+  border-color: var(--va-primary);
+  background: var(--va-primary-faint);
+  transform: translateX(4px);
+}
+
+.va-option-card.selected {
+  border-color: var(--va-primary);
+  background: var(--va-primary-faint);
+  box-shadow: var(--va-shadow-glow);
+}
+
+.va-option-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  background: var(--va-primary-faint);
+  color: var(--va-primary);
+}
+
+.va-option-title { font-weight: 600; font-size: 0.9rem; color: var(--va-text); }
+.va-option-sub   { font-size: 0.8rem; color: var(--va-text-muted); margin-top: 2px; }
+.va-option-price { font-size: 1.1rem; font-weight: 800; color: var(--va-success); white-space: nowrap; margin-left: auto; }
+
+/* ─── Service Pills (preference buttons) ─────────────────────────────────── */
+.va-service-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--va-border);
+  color: var(--va-text-muted);
+  background: var(--va-muted);
+  transition: all var(--va-trans);
+  font-family: inherit;
+}
+
+.va-service-pill:hover {
+  border-color: var(--va-primary);
+  color: var(--va-primary);
+  background: var(--va-primary-faint);
+}
+
+/* ─── Keyframe Animations ────────────────────────────────────────────────── */
+@keyframes va-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes va-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes va-fade-out {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes va-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ─── Spinner ────────────────────────────────────────────────────────────── */
+.va-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--va-border);
+  border-top-color: var(--va-primary);
+  border-radius: 50%;
+  animation: va-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes va-spin { to { transform: rotate(360deg); } }

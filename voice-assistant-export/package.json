@@ -1,0 +1,31 @@
+{
+  "name": "shai-voice-assistant",
+  "version": "1.0.0",
+  "description": "Exact voice assistant module extracted from SHAI Agent AI (Flask + Vanilla JS project). Uses native Web Speech API.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev":   "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react":     "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react":     "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.5.3",
+    "vite":       "^5.4.2"
+  },
+  "notes": {
+    "no_third_party_speech": "The project uses ONLY the browser-native Web Speech API (webkitSpeechRecognition / SpeechRecognition). No external STT/TTS library is used.",
+    "no_audio_context":      "The project does NOT use AudioContext, AnalyserNode, or MediaRecorder.",
+    "no_framer_motion":      "The project uses CSS keyframe animations only. Framer Motion is NOT used.",
+    "no_ai_sdk":             "NLP/intent parsing happens server-side in Python. There is no client-side AI SDK.",
+    "fontawesome":           "Icons use Font Awesome 6 CDN. Add <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'> to your index.html.",
+    "fonts":                 "The project uses Poppins from Google Fonts. Add the Poppins link to index.html."
+  }
+}

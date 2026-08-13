@@ -1,0 +1,39 @@
+<!-- ============================================================
+     SHAI Agent AI — VoiceButton (Vanilla JS / HTML Template)
+     
+     This is the EXACT HTML + JS mic button implementation
+     used in templates/booking.html.
+     
+     Inline in booking.html (lines 47–53):
+     ============================================================ -->
+
+<!--
+  Mic Button HTML (from booking.html line 47-49):
+  ------------------------------------------------
+  <button class="btn btn-secondary btn-icon" id="micBtn"
+          style="border-radius: 50%; width: 44px; height: 44px;">
+    <i class="fa-solid fa-microphone"></i>
+  </button>
+
+  Send Button HTML (from booking.html line 50-52):
+  ------------------------------------------------
+  <button class="btn btn-primary btn-icon" id="sendBtn"
+          style="border-radius: 50%; width: 44px; height: 44px;">
+    <i class="fa-solid fa-paper-plane"></i>
+  </button>
+
+  JavaScript — Mic Button State Changes (booking.js lines 310–339):
+  -----------------------------------------------------------------
+  When listening starts (recognition.onstart):
+    micBtn.innerHTML = '<i class="fa-solid fa-stop" style="color:var(--accent-danger);"></i>'
+    micBtn.style.background = 'rgba(239,68,68,0.2)'
+    micBtn.style.border = '1px solid var(--accent-danger)'
+
+  When listening ends (recognition.onend / onerror):
+    micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i>'
+    micBtn.style.background = ''
+    micBtn.style.border = ''
+
+  Unsupported browser (line 355):
+    micBtn.style.display = 'none'
+-->
